@@ -257,7 +257,7 @@ export default {
           { validator: valideID}
         ],
         jizhangriqi: [
-        //   { required: true, message: "请输入真实的记账日期", trigger: "blur" },
+        //   { required: true, message: "请输入真实的记账日期", trigger: "blur" }
         //   {validator: valideEmail }
         ],
         xinzengtouzie: [
@@ -320,6 +320,7 @@ export default {
         this.addForm.touzitianshu = "0";
         this.addForm.tixiane = "0";
         this.addForm.shouyie = "0";
+        this.addForm.jizhangriqi = util.formatDate.format(new Date(), 'yyyy-MM-dd');
     },
     cancelAddjizhang(){
         this.add_loading = false;

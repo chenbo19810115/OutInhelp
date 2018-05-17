@@ -3,7 +3,7 @@
     <Row :gutter="10">
         <Col span="24">
             <Row>
-                <Button type="primary" :loading="get_backlist_loading" @click="getbackrec">刷新最新备份列表</Button>
+                <!-- <Button type="primary" :loading="get_backlist_loading" @click="getbackrec">刷新最新备份列表</Button> -->
                 <Button type="primary" :loading="backdata_optioning" @click="backdata">备份当前数据</Button>
             </Row>
         </Col>
@@ -26,31 +26,30 @@ import {GetbackrecInfo, RestorDataInfo, BackdataInfo} from "../../api/api";
                     {
                         title: '数据备份文件',
                         key: 'backfile',
-                        width: 300
-                    },
-                    {
-                        title: '操作',
-                        key: 'action',
-                        align: 'left',
-                        render: (h, params) => {
-                            return h('div', [
-                                h('Button', {
-                                    style: {
-                                        margin: '0 5px'
-                                    },
-                                    props: {
-                                        type: 'success',
-                                        size: 'small'
-                                    },
-                                    on: {
-                                        click: () => {
-                                            this.restoredata(params.index);
-                                        }
-                                    }
-                                }, '删除'),
-                            ])
-                        }
                     }
+                    // {
+                    //     title: '操作',
+                    //     key: 'action',
+                    //     align: 'left',
+                    //     render: (h, params) => {
+                    //         return h('div', [
+                    //             h('Button', {
+                    //                 style: {
+                    //                     margin: '0 5px'
+                    //                 },
+                    //                 props: {
+                    //                     type: 'success',
+                    //                     size: 'small'
+                    //                 },
+                    //                 on: {
+                    //                     click: () => {
+                    //                         this.restoredata(params.index);
+                    //                     }
+                    //                 }
+                    //             }, '删除'),
+                    //         ])
+                    //     }
+                    // }
                 ]
             }
         },
@@ -83,7 +82,7 @@ import {GetbackrecInfo, RestorDataInfo, BackdataInfo} from "../../api/api";
 
             restoredata(index){
                 var restore = {
-                    backid: this.data[index].backid,
+                    backid: this.dataRecInfo[index].backid,
                 }
          
                 RestorDataInfo(restore).then( (res) =>{

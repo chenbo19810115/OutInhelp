@@ -328,6 +328,8 @@ public class UserController {
 				userService.ModifyUserNianhualv(userId);
 			}
 			
+			map.put("retCode", 500);
+			map.put("msg", "投资收益记账成功！");
 			
 		}else{
 			map.put("retCode", 501);

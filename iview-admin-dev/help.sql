@@ -1,7 +1,7 @@
 /*
 Navicat MySQL Data Transfer
 
-Source Server         : mysql
+Source Server         : localhost_3306
 Source Server Version : 50522
 Source Host           : localhost:3306
 Source Database       : help
@@ -10,7 +10,7 @@ Target Server Type    : MYSQL
 Target Server Version : 50522
 File Encoding         : 65001
 
-Date: 2018-05-16 01:45:08
+Date: 2018-05-17 18:36:20
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -76,7 +76,7 @@ CREATE TABLE `optinfo` (
   `optcode` tinyint(4) NOT NULL,
   `opttime` time NOT NULL,
   `optdescription` varchar(37) NOT NULL,
-  `optcontent` varchar(64) NOT NULL,
+  `optcontent` varchar(256) NOT NULL,
   PRIMARY KEY (`optid`),
   KEY `timeidx` (`opttime`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
