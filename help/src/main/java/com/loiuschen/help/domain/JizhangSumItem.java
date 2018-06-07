@@ -1,39 +1,13 @@
 package com.loiuschen.help.domain;
 
-import java.io.Serializable;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Table;
-
-import org.hibernate.annotations.GenericGenerator;
-
-@Entity
-@Table(name = "jizhangsum")
-public class JizhangSum   implements Serializable{
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -3679639020017197867L;
-	@Id
-	@GeneratedValue(generator = "uuid")
-	@GenericGenerator(name = "uuid", strategy = "uuid")
-	@Column(name = "jizhangid")
+public class JizhangSumItem {
 	String jizhangid;
-	@Column(name = "id")
 	String id;
-	@Column(name = "jizhangriqi")
 	String jizhangriqi;
-	@Column(name = "zongtouzie")
 	String zongtouzie;
-	@Column(name = "zongshouyie")
 	String zongshouyie;
-	@Column(name = "shouyie")
 	String shouyie;
-	@Column(name = "nianhuashouyilv")
-	String nianhuashouyilv = "0.00%";
+	String nianhuashouyilv;
 	
 	public String getNianhuashouyilv() {
 		return nianhuashouyilv;
@@ -77,5 +51,4 @@ public class JizhangSum   implements Serializable{
 	public void setShouyie(String shouyie) {
 		this.shouyie = shouyie;
 	}
-
 }

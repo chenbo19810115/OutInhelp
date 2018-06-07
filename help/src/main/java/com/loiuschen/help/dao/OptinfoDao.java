@@ -45,7 +45,7 @@ public class OptinfoDao extends BaseDao<Optinfo> {
 		optinfo.setOptdescription(OPTDES_ADD_USER_JIZHANG);
 		optinfo.setOpttime(time);
 		
-		String optcontent = String.format("用户ID=%s;记账日期：%s;新增投资额：%s;收益额：%s;提现 额：%s;投资天数：%s", 
+		String optcontent = String.format("用户ID=%s;记账日期：%s;投资额：%s;收益额：%s;提现 额：%s;投资天数：%s", 
 				userId, jizhangriqi, xinzengtouzie, shouyie, tixiane, touzitianshu);
 		optinfo.setOptcontent(optcontent);
 		
@@ -61,7 +61,7 @@ public class OptinfoDao extends BaseDao<Optinfo> {
 		optinfo.setOptdescription(OPTDES_MODIFY_USER_JIZHANG);
 		optinfo.setOpttime(time);
 		
-		String optcontent = String.format("用户ID=%s;记账日期：%s;新增投资额：%s;收益额：%s;提现 额：%s;投资天数：%s", 
+		String optcontent = String.format("用户ID=%s;记账日期：%s;投资额：%s;收益额：%s;提现 额：%s;投资天数：%s", 
 				userId, jizhangriqi, xinzengtouzie, shouyie, tixiane, touzitianshu);
 		optinfo.setOptcontent(optcontent);
 		

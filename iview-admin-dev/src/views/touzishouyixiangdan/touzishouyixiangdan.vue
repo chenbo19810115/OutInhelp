@@ -125,6 +125,73 @@ export default {
         }
     };
 
+   const validetouzie = (rule, value, callback) =>
+    {
+        var regBasic = /^(\+)?\d+(\.\d+)?$/;
+        if(!regBasic.test(value)) { //格式不正确
+            callback(new Error("请输入正确的金额"));
+            return;
+        } else {
+            if(Number(value) > 0){ //投资额大于0
+               if(Number(this.modifyForm.touzitianshu) <= 0){ // 投资天数小于等于0
+                   callback(new Error("请输入投资天数！"));
+                   return;
+               }else{ //投资天数大于0
+                   callback();
+                   return;
+               }
+            }else //投资额小于等于0
+            {
+                if(Number(this.modifyForm.touzitianshu) > 0){// 投资天数大于0
+                   callback(new Error("请重置投资天数为0！"));
+                   return;
+                }else{ // 投资天数小于等于0
+                    callback();
+                    return;
+                }
+            }
+        }
+    };
+
+    const validinter = (rule, value, callback) =>{
+        var regBasic = /^[0-9]+$/ ;
+        if(!regBasic.test(value)) {
+            callback(new Error("请输入正确的投资天数"));
+            return;
+        } else {
+            callback();
+            return;
+        }
+    };
+
+    const validTouzitianshu = (rule, value, callback) => {
+        var regBasic = /^[0-9]+$/ ;
+        if(!regBasic.test(value)) { //格式不正确
+            callback(new Error("请输入正确的投资天数"));
+            return;
+        } else { //如果填写了
+            if(Number(value) > 0){ //天数大于0
+               if(Number(this.modifyForm.xinzengtouzie) <= 0){ //投资额小于等于0
+                   callback(new Error("请重置投资天数为0！"));
+                   return;
+               }else{ //投资额大于0
+                   callback();
+                   return;
+               }
+            }else //天数小于等于0
+            {
+                if(Number(this.modifyForm.xinzengtouzie) > 0){ //投资额大于0
+                   callback(new Error("请输入投资天数！"));
+                   return;
+                }else{
+                    callback();
+                    return;
+                }
+            }
+        }
+        
+    };
+
     return {
       columns: [
         {
@@ -226,13 +293,13 @@ export default {
           { required: true, message: "请输入正确身份证号", trigger: "blur" },
           { validator: valideID}
         ],
-        jizhangriqi: [
-        //   { required: true, message: "请输入真实的记账日期", trigger: "blur" },
-        //   {validator: valideEmail }
+        touzitianshu: [
+            { required: true, message: "请输入投资天数", trigger: "change" }, 
+            { validator: validTouzitianshu}
         ],
         xinzengtouzie: [
-          { required: true, message: "请输入正确的金额", trigger: "blur" },
-          { validator: validenumber }
+          { required: true, message: "请输入正确的金额", trigger: "change" },
+          { validator: validetouzie }
         ],
         tixiane: [
           { required: true, message: "请输入正确的金额", trigger: "blur" },
@@ -293,6 +360,12 @@ export default {
     modifyFormSave(){
         this.$refs.modifyForm.validate(valid => {
             if (valid) {
+            if(this.modifyForm.jizhangriqi === undefined || this.modifyForm.jizhangriqi === 0)
+                {
+                    this.$Message.error("必须选择记账日期！");
+                    reutrn;
+                }
+
         this.modify_loading = true;
         var newTouzi = {
             jizhangid: this.modifyForm.jizhangid,

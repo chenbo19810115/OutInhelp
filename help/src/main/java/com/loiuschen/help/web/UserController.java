@@ -314,7 +314,7 @@ public class UserController {
 			Double tixianeIn = Double.parseDouble(tixiane);
 			if(tixianeIn != null && tixianeIn > 0 )
 			{
-				userService.AddTixianRec(userId, jizhangriqi, tixiane);;
+				userService.AddTixianRec(userId, jizhangriqi, tixiane);
 			}
 			else
 			{
@@ -323,10 +323,7 @@ public class UserController {
 			
 			userService.ModifyUserJizhangSumInfo(userId, shouyie);
 			
-			if(touzieIn != null && touzieIn > 0)
-			{
-				userService.ModifyUserNianhualv(userId);
-			}
+			userService.ModifyUserNianhualv(userId);
 			
 			map.put("retCode", 500);
 			map.put("msg", "投资收益记账成功！");
@@ -362,6 +359,8 @@ public class UserController {
 			userService.DeleteTouziRec(userId, jizhangriqi);
 			
 			userService.DeleteShouyiRec(userId, jizhangriqi);
+			
+			userService.DeleteTixianRec(jizhangriqi, jizhangriqi);
 			
 			//重新统计记账汇总
 			userService.ModifyUserJizhangSumInfo(userId);
@@ -418,27 +417,33 @@ public class UserController {
 			if(touzieIn != null && touzieIn > 0 )
 			{
 				userService.AddTouziRec(userId, jizhangriqi, xinzengtouzie, touzitianshu);
+			}else
+			{
+				userService.DeleteTouziRec(userId, jizhangriqi);
 			}
 			
 			Double shoyieIn = Double.parseDouble(shouyie);
 			if(shoyieIn != null && shoyieIn > 0 )
 			{
 				userService.AddShouyiRec(userId, jizhangriqi, shouyie);
+			}else
+			{
+				userService.DeleteShouyiRec(userId, jizhangriqi);
 			}
 			
 			Double tixianeIn = Double.parseDouble(tixiane);
 			if(tixianeIn != null && tixianeIn > 0 )
 			{
 				userService.AddTixianRec(userId, jizhangriqi, tixiane);;
+			}else
+			{
+				userService.DeleteTixianRec(userId, jizhangriqi);
 			}
 			
 			userService.AddUserJizhangSumInfo(userId, jizhangriqi, 
 					xinzengtouzie, shouyie, tixiane);
 			
-			if(touzieIn != null && touzieIn > 0 )
-			{
-				userService.ModifyUserNianhualv(userId);
-			}
+			userService.ModifyUserNianhualv(userId);
 			
 			map.put("retCode", 500);
 			map.put("msg", "投资收益增加成功！");
@@ -555,17 +560,6 @@ public class UserController {
 	void BackdataInfo(HttpServletRequest request, HttpServletResponse response) throws IOException
 	{
 		String jsonbackInfo = userService.BackdataInfo();
-		response.setContentType("text/html;charset=utf-8");
-		response.getWriter().write(jsonbackInfo);
-	}
-	
-	
-	@RequestMapping(value = "/RestorDataInfoAPI", method = RequestMethod.GET)
-	void RestorDataInfo(HttpServletRequest request, HttpServletResponse response) throws IOException
-	{
-		response.setCharacterEncoding("UTF-8");
-		String backid = request.getParameter("backid");
-		String jsonbackInfo = userService.RestorDataInfo(backid);
 		response.setContentType("text/html;charset=utf-8");
 		response.getWriter().write(jsonbackInfo);
 	}

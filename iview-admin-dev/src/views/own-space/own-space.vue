@@ -1,53 +1,93 @@
-<style lang="less" scoped>
-    @import '../../styles/common.less';
-    @import '../tables/components/table.less';
-</style>
-
 <template>
     <div>
-        <Row class="margin-top-10">
-            <Card>
-                <h4 slot="title">
-                    <Icon type="ios-grid-view"></Icon>
-                    个人收益记录
-                </h4>
-                <Row>
-                    <Col span="15">
-                        <Table :columns="excelColumns" height="390px" :data="table2excelData" size="small" ref="tableExcel"></Table>
-                    </Col>
-                    <Col span='6' class="padding-left-10">
-                         <div class="margin-top-10 margin-left-10">
-                            <span>输入文件名：</span>
-                            <Input v-model="excelFileName" icon="document" placeholder="请输入文件名" style="width: 190px" />
-                        </div>
-                        <div class="margin-left-10 margin-top-20">
-                            <a id="hrefToExportTable" style="postion: absolute;left: -10px;top: -10px;width: 0px;height: 0px;"></a>
-                            <Button type="primary" size="large" @click="exportExcel">下载表格数据</Button>
-                        </div>
-                    </Col>
-                </Row>
-            </Card>
+        <Row :gutter="10">
+            <Col span="24">
+                <Button type="primary"  :loading="save_touzishouyi_loading" @click="refreshusertouzishouyi">刷新收益信息</Button>
+            </Col>
+        </Row>
+        <Row><br/></Row>
+        <Row :gutter="10">
+            <Col span="24">
+                <Table ref="touziTable" border :columns="columns" :data="data" :height="heightVar"></Table>
+            </Col>
         </Row>
     </div>
 </template>
 
 <script>
-import excelColumns from './data/tablejiegou.js';
-import table2excel from '../../libs/table2excel.js';
+import Cookies from 'js-cookie';
+import { GetUsrJizhangInfo} from '../../api/api'
 export default {
-    name: 'exportable-table',
-    data () {
-        return {
-            table2excelData: [],
-            excelColumns: excelColumns,
-            excelFileName: '',
-            tableExcel: {},
-        };
-    },
-    methods: {
-        exportExcel () {
-            table2excel.transform(this.$refs.tableExcel, 'hrefToExportTable', this.excelFileName);
+  data() {
+    return {
+      columns: [
+        {
+          title: "身份证",
+          key: "id"
+        },
+        {
+          title: "日期",
+          key: "jizhangriqi"
+        },
+        {
+          title: "新增投资",
+          key: "xinzengtouzie",
+        },
+        {
+          title: "提现",
+          key: "tixiane"
+        },
+        {
+          title: "收益",
+          key: "shouyie"
         }
+      ],
+        
+        id:0,
+        save_touzishouyi_loading: false,
+        data:[]
+    };
+  },
+  methods: {
+
+    init() {
+       this.save_touzishouyi_loading = false;
+       this.id = Cookies.get('id');
+    },
+
+    getusertouzishouyi(userid) {
+
+      var useridinfo = {
+        id: this.id
+      }
+
+      this.save_touzishouyi_loading = true;
+      GetUsrJizhangInfo(useridinfo).then( (res) =>{
+          let{retCode, msg, userjizhanginfo} = res;
+          if(retCode !== 500){
+              this.$Message.info({
+                    content: msg,
+                    duration: 3,
+                    closable: true
+              });
+          }
+          else{
+              this.data = userjizhanginfo;
+          }
+
+          this.save_touzishouyi_loading = false;
+      });
+    },
+    
+    refreshusertouzishouyi()
+    {
+      this.getusertouzishouyi(undefined);
     }
+  },
+  mounted() {
+      this.init();
+      this.heightVar = window.innerHeight - this.$refs.touziTable.$el.offsetTop - 140;
+      this.getusertouzishouyi(Cookies.get('id'));
+  },
 };
 </script>

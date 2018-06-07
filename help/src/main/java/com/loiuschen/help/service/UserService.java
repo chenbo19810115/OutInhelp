@@ -2,6 +2,7 @@ package com.loiuschen.help.service;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -15,7 +16,6 @@ import net.sf.json.JsonConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.loiuschen.help.dao.BackDao;
 import com.loiuschen.help.dao.JizhangDayDao;
 import com.loiuschen.help.dao.JizhangSumDao;
 import com.loiuschen.help.dao.OptinfoDao;
@@ -24,7 +24,7 @@ import com.loiuschen.help.dao.TixianDao;
 import com.loiuschen.help.dao.TouziDao;
 import com.loiuschen.help.dao.UserDao;
 import com.loiuschen.help.dao.UserRegDao;
-import com.loiuschen.help.domain.Back;
+import com.loiuschen.help.domain.BackEx;
 import com.loiuschen.help.domain.JizhangDay;
 import com.loiuschen.help.domain.JizhangSum;
 import com.loiuschen.help.domain.Message;
@@ -35,10 +35,11 @@ import com.loiuschen.help.domain.Tixian;
 import com.loiuschen.help.domain.Touzi;
 import com.loiuschen.help.domain.User;
 import com.loiuschen.help.domain.UserReg;
+import com.loiuschen.help.util.BackUtil;
 
 @Service
 public class UserService extends BaseService{
-	private final String BACKUP_DIR = "";
+	private static String BACKUP_DIR = null;
 	private final String DB_USER = "root";
 	private final String DB_PWD = "root";
 	private final String DB_NAME = "help";
@@ -59,13 +60,15 @@ public class UserService extends BaseService{
 	private TixianDao tixianDao;
 	@Autowired
 	private OptinfoDao optinfoDao;
-	@Autowired
-	private BackDao backDao;
+	
+	private static BackUtil backUtil = null;
 	
 	private static SimpleDateFormat df = null;
 	
 	static{
 		df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		BACKUP_DIR = System.getProperty("user.dir");
+		backUtil = new BackUtil();
 	}
 	
 	
@@ -446,24 +449,59 @@ public class UserService extends BaseService{
 	
 	public void ModifyUserJizhangSumInfo(String userId, String shouyie)
 	{
-		Double userZongtouzie = touziDao.queryUserSumTouzi(userId);
+		List<JizhangSum> userjizhangsum = jizhangSumDao
+				.GetUserJizhangSumInfo(userId);
 		
-		Double userZongshouyie = shouyiDao.queryUserSumShouyi(userId);
-		
-		jizhangSumDao.UpdateJizhangSumInfo(userId, userZongtouzie.toString(), 
-				shouyie, userZongshouyie.toString());
-		
+		if (userjizhangsum.size() >= 1) {
+			// 有则更新记录
+			// 收益额 == 收益额；
+			// 总投资 = 总投资 + 新增投资 + 收益额 - 提现额 ；
+			// 总收益 = 总收益 + 收益额；
+			Double userZongtouzie = touziDao.queryUserSumTouzi(userId);
+			
+			Double userZongshouyie = shouyiDao.queryUserSumShouyi(userId);
+			
+			Double userZongtixiane = tixianDao.GetUserSumTixian(userId);
+
+			Double dxinzongtouzie = userZongtouzie + userZongshouyie - userZongtixiane;
+
+			String zongtouzie = String.valueOf(dxinzongtouzie);
+			
+			String zongshouyie = String.valueOf(userZongshouyie);
+			
+			jizhangSumDao.UpdateJizhangSumInfo(userId, zongtouzie, shouyie, zongshouyie);
+		} else {
+
+		}
 	}
 	
-	public void ModifyUserJizhangSumInfo(String userId)
-	{
-		Double userZongtouzie = touziDao.queryUserSumTouzi(userId);
+	public void ModifyUserJizhangSumInfo(String userId) {
+
+		List<JizhangSum> userjizhangsum = jizhangSumDao
+				.GetUserJizhangSumInfo(userId);
 		
-		Double userZongshouyie = shouyiDao.queryUserSumShouyi(userId);
-		
-		jizhangSumDao.UpdateJizhangSumInfo(userId, userZongtouzie.toString(), 
-				userZongshouyie.toString());
-		
+		if (userjizhangsum.size() >= 1) {
+			// 有则更新记录
+			// 收益额 == 收益额；
+			// 总投资 = 总投资 + 新增投资 + 收益额 - 提现额 ；
+			// 总收益 = 总收益 + 收益额；
+			Double userZongtouzie = touziDao.queryUserSumTouzi(userId);
+			
+			Double userZongshouyie = shouyiDao.queryUserSumShouyi(userId);
+			
+			Double userZongtixiane = tixianDao.GetUserSumTixian(userId);
+
+			Double dxinzongtouzie = userZongtouzie + userZongshouyie - userZongtixiane;
+
+			String zongtouzie = String.valueOf(dxinzongtouzie);
+			
+			String zongshouyie = String.valueOf(userZongshouyie);
+
+			jizhangSumDao.UpdateJizhangSumInfo(userId,
+					zongtouzie, zongshouyie);
+		} else {
+
+		}
 	}
 	
 	public void ModifyUserNianhualv(String userId){
@@ -505,7 +543,9 @@ public class UserService extends BaseService{
 			;
 		}
 		
-		jizhangSumDao.UpdateUsrNianhualv(userId, nianhualv.toString());
+		DecimalFormat df = new DecimalFormat("#.00");
+		String strnianhualv = df.format(nianhualv * 100) + "%";
+		jizhangSumDao.UpdateUsrNianhualv(userId, strnianhualv);
 		
 	}
 	
@@ -569,9 +609,13 @@ public class UserService extends BaseService{
 			JizhangSum jizhangsum = new JizhangSum();
 			jizhangsum.setId(userId);
 			jizhangsum.setJizhangriqi(jizhangriqi);
+			Double dxinzengtouzie = Double.parseDouble(xinzengtouzie);
+			Double dxinShouyi = Double.parseDouble(shouyie);
+			Double dxinzongtouzie = dxinzengtouzie + dxinShouyi;
+			String zongtouzie = String.valueOf(dxinzongtouzie);
 			jizhangsum.setShouyie(shouyie);
 			jizhangsum.setZongshouyie(shouyie);
-			jizhangsum.setZongtouzie(xinzengtouzie);
+			jizhangsum.setZongtouzie(zongtouzie);
 			jizhangSumDao.save(jizhangsum);
 			return 0;
 		}
@@ -579,20 +623,22 @@ public class UserService extends BaseService{
 		{
 			//有则更新记录
 			//收益额 == 收益额； 
-			//总投资 = 总投资 + 新增投资 ； 
+			//总投资 = 总投资 + 新增投资 + 收益额 - 提现额 ； 
 			//总收益 = 总收益 + 收益额；
-			//半年收益额 = 把当前记账日期，前的半年都计算；
-			//可以添加半年时间：进行时间比对：减少重新计算次数；
-			JizhangSum jizhangsum = userjizhangsum.get(0);
-			String zongtouzie = String.valueOf(
-					Double.parseDouble(jizhangsum.getZongtouzie()) 
-					+ Double.parseDouble(xinzengtouzie));
+            Double userZongtouzie = touziDao.queryUserSumTouzi(userId);
 			
-			String zongshouyie = String.valueOf(
-					Double.parseDouble(jizhangsum.getZongshouyie()) 
-					+ Double.parseDouble(shouyie));
+			Double userZongshouyie = shouyiDao.queryUserSumShouyi(userId);
+			
+			Double userZongtixiane = tixianDao.GetUserSumTixian(userId);
+
+			Double dxinzongtouzie = userZongtouzie + userZongshouyie - userZongtixiane;
+
+			String zongtouzie = String.valueOf(dxinzongtouzie);
+			
+			String zongshouyie = String.valueOf(userZongshouyie);
 			
 			jizhangSumDao.UpdateJizhangSumInfo(userId, zongtouzie, shouyie, zongshouyie);
+			
 			return 1;
 			
 		}
@@ -604,6 +650,7 @@ public class UserService extends BaseService{
 	    jizhangDayDao.deletejizhangDaybyusrid(userId);
 	    touziDao.DeleteUserTouzi(userId);
 	    shouyiDao.deleteShouyiById(userId);
+	    tixianDao.deleteTixianById(userId);
 	}
 	
 	public String ModifyuserInfo(String id, String cellphone, String email)
@@ -646,6 +693,13 @@ public class UserService extends BaseService{
 	
 	public void AddShouyiRec(String id, String shouyiriqi, String shouyie)
 	{
+		Double userZongtouzie = touziDao.queryUserSumTouzi(id);
+		
+		if(null == userZongtouzie || userZongtouzie <= 0)
+		{
+			return;
+		}
+		
 		Shouyi shouyiExisted = shouyiDao.queryShouyiDayInfo(id, shouyiriqi);
 		if(null == shouyiExisted){
 			Shouyi newShouyi = new Shouyi();
@@ -665,6 +719,13 @@ public class UserService extends BaseService{
 	
 	public void AddTixianRec(String id, String tixianRiqi, String tixiane)
 	{
+		Double dtixiane = Double.parseDouble(tixiane);
+		Double userZongtouzie = touziDao.queryUserSumTouzi(id);
+		if(null == userZongtouzie || userZongtouzie < dtixiane)
+		{
+			return;
+		}
+		
 		Tixian tixianExisted = tixianDao.queryTixianDayInfo(id, tixianRiqi);
 		if(null == tixianExisted){
 			Tixian newTixian = new Tixian();
@@ -704,7 +765,8 @@ public class UserService extends BaseService{
 	
 	public String GetbackrecInfo()
 	{
-		List<Back> backlist = backDao.loadAll();
+//		List<Back> backlist = backDao.loadAll();
+		List<BackEx> backlist = backUtil.getBackList();
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("retCode", 500);
 		map.put("backlist", backlist);
@@ -716,27 +778,31 @@ public class UserService extends BaseService{
 	{
 		String filename = "backup-" + df.format(new Date()) + ".sql";
 		
-		String savePath = BACKUP_DIR + filename; 
+		String filename1 = filename.replace(" ", "");
+		
+		String filename2 = filename1.replace(":", "");
+		
+		String savePath = BACKUP_DIR + "\\" + filename2;
 		
 		String[] execCMD = new String[] {"mysqldump", "-u" + DB_USER, "-p" + DB_PWD, DB_NAME,  
-		            "-r" + savePath, "--skip-lock-tables"}; 
+		            "-r", savePath}; 
 		
 		Map<String, Object> map = new HashMap<String, Object>();
 		
 		try {
 			
-			Process process = null;
-			process = Runtime.getRuntime().exec(execCMD);
+			Process process = Runtime.getRuntime().exec(execCMD);
 			
 			try {
 				int processComplete = process.waitFor();
 				if (processComplete == 0) {  
-				    backDao.backdataInfo(filename);
-				    List<Back> backlist = backDao.loadAll();
+//				    backDao.backdataInfo(filename2);
+					backUtil.backdataInfo(filename2);
+					List<BackEx> backlist = backUtil.getBackList();
+//				    List<Back> backlist = backDao.loadAll();
 				    map.put("retCode", 500);
 					map.put("backlist", backlist);
 				} else {
-					backDao.backdataInfo(filename);
 				    map.put("retCode", 501);
 				} 
 			} catch (InterruptedException e) {
@@ -746,38 +812,6 @@ public class UserService extends BaseService{
 			map.put("retCode", 501);
 		}
 		
-		JsonConfig sc = new JsonConfig();
-		return  JSONObject.fromObject(map, sc).toString();
-	}
-	
-	public String RestorDataInfo(String backid)
-	{
-		String filename = backDao.getbackfilename(backid);
-		
-		String targetFile =  BACKUP_DIR + filename; 
-		
-	    String[] execCMD = new String[]{"mysql", DB_NAME, "-u" + DB_USER, "-p" + DB_PWD, "-e source", targetFile};  
-	   
-	    Map<String, Object> map = new HashMap<String, Object>();
-	    
-		try {
-			Process process = Runtime.getRuntime().exec(execCMD);
-			
-			try {
-				int processComplete = process.waitFor();
-				
-				if (processComplete == 0) {  
-					map.put("retCode", 500);
-			    } else {  
-			    	map.put("retCode", 501);  
-			    }  
-			} catch (InterruptedException e) {
-				map.put("retCode", 501); 
-			}  
-		} catch (IOException e) {
-			map.put("retCode", 501);
-		}  
-	  
 		JsonConfig sc = new JsonConfig();
 		return  JSONObject.fromObject(map, sc).toString();
 	}

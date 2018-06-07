@@ -55,5 +55,3 @@ export const ClearOptRecInfo = params => { return axios.get(`${base}/ClearOptRec
 export const GetbackrecInfo = params => { return axios.get(`${base}/GetbackrecInfoAPI`).then(res => res.data); };
 
 export const BackdataInfo = params => { return axios.get(`${base}/BackdataInfoAPI`).then(res => res.data); };
-
-export const RestorDataInfo = params => { return axios.get(`${base}/RestorDataInfoAPI`, { params: params }).then(res => res.data); };

@@ -2,6 +2,7 @@ package com.loiuschen.help.dao;
 
 import java.util.List;
 
+import org.hibernate.Session;
 import org.springframework.stereotype.Repository;
 
 import com.loiuschen.help.domain.Tixian;
@@ -15,6 +16,8 @@ public class TixianDao extends BaseDao<Tixian> {
 	protected final String DELETE_USER_DAY_TIXIAN = "delete from Tixian where id=? and tixianriqi=?";
 	protected final String GET_ALL_NOT_EXCUTE_TIXIAN = "from Tixian where btixian=0";
 	protected final String EXCUTE_TIXIAN = "update Tixian set btixian=1 where tixianid=?";
+	private final String GET_USER_SUM_TIXIAN = "select sum(tixiane) as zongtixiane from Tixian where id=?";
+	private final String DELETE_TIXIAN_BY_ID ="delete from Tixian where id=?";
 	
 	@SuppressWarnings("unchecked")
 	public List<Tixian> GetExcutedUnReadMsgList(String id) {
@@ -66,5 +69,27 @@ public class TixianDao extends BaseDao<Tixian> {
 	public void DeleteUserDayTixian(String id, String tixianriqi)
 	{
 		getHibernateTemplate().bulkUpdate(DELETE_USER_DAY_TIXIAN, id, tixianriqi);
+	}
+	
+	public Double GetUserSumTixian(String id) {
+		Session session = getHibernateTemplate().getSessionFactory()
+				.getCurrentSession();
+
+		Object sumtixiane = session.createQuery(GET_USER_SUM_TIXIAN)
+				.setParameter(0, id).uniqueResult();
+
+		Double dRet = 0.0;
+		if (null != sumtixiane) {
+			dRet = Double.parseDouble(sumtixiane.toString());
+		} else {
+			;
+		}
+
+		return dRet;
+	}
+	
+	public void deleteTixianById(String id)
+	{
+		getHibernateTemplate().bulkUpdate(DELETE_TIXIAN_BY_ID, id);
 	}
 }

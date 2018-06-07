@@ -63,7 +63,7 @@ export default {
             let { retCode, sumbangdanlist } = res;
             if (retCode !== 500) {
                 this.$Message.info({
-                    content: '获取用户的投资请求列表失败！',
+                    content: '没有总榜单信息！',
                     duration: 3,
                     closable: true
                 });

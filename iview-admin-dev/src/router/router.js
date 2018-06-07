@@ -67,17 +67,6 @@ export const otherRouter = {
 
 // 作为Main组件的子页面展示并且在左侧菜单显示的路由写在appRouter里
 export const appRouter = [
-    // {
-    //     path: '/ownspace',
-    //     icon: 'ios-grid-view',
-    //     name: 'ownspace',
-    //     access: 1,
-    //     title: '个人收益',
-    //     component: Main,
-    //     children: [
-    //         { path: 'index', title: '个人收益', name: 'ownspace_index', access: 1, component: () => import('@/views/own-space/own-space.vue') }
-    //     ]
-    // },
     {
         path: '/bangdian',
         icon: 'ios-grid-view',
@@ -87,6 +76,18 @@ export const appRouter = [
         component: Main,
         children:[
             {path: 'index', title: '收益总榜单', name: 'shouyi_bangdian_index', access: 1, component: () => import('@/views/sumbangdan/sumbangdan.vue') }
+        ]
+    },
+
+    {
+        path: '/ownspace',
+        icon: 'ios-grid-view',
+        name: 'ownspace',
+        access: 1,
+        title: '个人收益',
+        component: Main,
+        children: [
+            { path: 'index', title: '个人收益', name: 'ownspace_index', access: 1, component: () => import('@/views/own-space/own-space.vue') }
         ]
     },
 
