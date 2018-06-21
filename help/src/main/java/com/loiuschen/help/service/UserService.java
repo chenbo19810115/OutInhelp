@@ -3,7 +3,9 @@ package com.loiuschen.help.service;
 import java.io.IOException;
 import java.io.Serializable;
 import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -65,8 +67,11 @@ public class UserService extends BaseService{
 	
 	private static SimpleDateFormat df = null;
 	
+	private static SimpleDateFormat dfShouyi = null;
+	
 	static{
 		df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		dfShouyi = new SimpleDateFormat("yyyy-MM-dd");
 		BACKUP_DIR = System.getProperty("user.dir");
 		backUtil = new BackUtil();
 	}
@@ -122,15 +127,18 @@ public class UserService extends BaseService{
 	
 	public String SaveUserRegQuestInfo(String name, String cellphone, String email, String id){
 		Map<String, Object> map = new HashMap<String, Object>();
-		UserReg userReg = new UserReg();
-		userReg.setId(id);
-		userReg.setName(name);
-		userReg.setCellphone(cellphone);
-		userReg.setEmail(email);
-		
-		UserReg existReg = userRegDao.GetRegInfo(id);
-		if(null == existReg)
+		//
+		User user = userDao.queryUserInfoByID(id);
+		if(null == user)
 		{
+			userRegDao.deleteReg(id);
+			
+			UserReg userReg = new UserReg();
+			userReg.setId(id);
+			userReg.setName(name);
+			userReg.setCellphone(cellphone);
+			userReg.setEmail(email);
+			
 			Serializable ret = userRegDao.save(userReg);
 			if(null != ret)
 			{
@@ -143,8 +151,7 @@ public class UserService extends BaseService{
 				map.put("msg", "此用户已经注册，请直接登录！");
 			}
 		}
-		else
-		{
+		else{
 			map.put("retCode", 501);
 			map.put("msg", "此用户已经注册，请直接登录！");
 		}
@@ -447,7 +454,7 @@ public class UserService extends BaseService{
 	    }
 	}
 	
-	public void ModifyUserJizhangSumInfo(String userId, String shouyie)
+	public void ModifyUserJizhangSumInfo(String userId, String shouyie, String jizhangriqi)
 	{
 		List<JizhangSum> userjizhangsum = jizhangSumDao
 				.GetUserJizhangSumInfo(userId);
@@ -469,7 +476,7 @@ public class UserService extends BaseService{
 			
 			String zongshouyie = String.valueOf(userZongshouyie);
 			
-			jizhangSumDao.UpdateJizhangSumInfo(userId, zongtouzie, shouyie, zongshouyie);
+			jizhangSumDao.UpdateJizhangSumInfo(userId, zongtouzie, shouyie, zongshouyie, jizhangriqi);
 		} else {
 
 		}
@@ -575,6 +582,94 @@ public class UserService extends BaseService{
 		}
 	}
 	
+	public void AddUserJizhangDayInfoByAvgShouyie(String userId, String beginjizhangriqi, 
+			String xinzengtouzie, String sumshouyie, String tixiane, String touzitianshu)
+	{
+		// 判断有没有投资，没有投资则，不能添加收益
+		Double userZongtouzie = touziDao.queryUserSumTouzi(userId);
+		if (null == userZongtouzie || userZongtouzie <= 0) {
+			return;
+		}
+		//其它指标填写到开始的第一天，将收益分成30天进行自动添加
+		Double shoyieIn = Double.parseDouble(sumshouyie);
+		Double shoyieInAvg = shoyieIn / 30;
+		JizhangDay jizhangDayExisted = jizhangDayDao.queryJizhangDayInfo(userId, beginjizhangriqi);
+		if(null != jizhangDayExisted){//有则更新
+			String oldshouyie = jizhangDayExisted.getShouyie();
+			Double newShouyie = shoyieInAvg + Double.parseDouble(oldshouyie);
+			String oldtouzie = jizhangDayExisted.getXinzengtouzie();
+			Double newtouzie = Double.parseDouble(oldtouzie) + Double.parseDouble(xinzengtouzie);
+			String oldtixiane = jizhangDayExisted.getTixiane();
+			Double newtixiane = Double.parseDouble(oldtixiane) + Double.parseDouble(tixiane);
+			jizhangDayDao.UpdateJizhangDayInfo(userId, beginjizhangriqi, 
+					newtouzie.toString(), newShouyie.toString(), newtixiane.toString());
+			
+			optinfoDao.SaveModifyUserJizhangDayOpt(userId, beginjizhangriqi, 
+					xinzengtouzie, shoyieInAvg.toString(), tixiane, "0");
+		}
+		else{//无则新增
+			JizhangDay jizhangDayAdded = new JizhangDay();
+			jizhangDayAdded.setId(userId);
+			jizhangDayAdded.setJizhangriqi(beginjizhangriqi);
+			jizhangDayAdded.setShouyie(shoyieInAvg.toString());
+			jizhangDayAdded.setXinzengtouzie(xinzengtouzie);
+			jizhangDayAdded.setTixiane(tixiane);
+			jizhangDayAdded.setTouzitianshu(touzitianshu);
+			jizhangDayDao.save(jizhangDayAdded);
+			
+			optinfoDao.SaveAddingUserJizhangDayOpt(userId, beginjizhangriqi, 
+					xinzengtouzie, shoyieInAvg.toString(), tixiane, touzitianshu);
+		}
+		
+		if(shoyieIn <= 0)
+		{
+			return;
+		}
+		
+		try {
+			Date date = dfShouyi.parse(beginjizhangriqi);
+			Calendar c = Calendar.getInstance();
+			c.setTime(date);
+
+			for (int iDay = 1; iDay < 30; iDay++) {
+				c.add(Calendar.DAY_OF_YEAR, 1);
+				String jizhangriqi = dfShouyi.format(c.getTime());
+				JizhangDay jizhangOtherDayExisted = jizhangDayDao
+						.queryJizhangDayInfo(userId, jizhangriqi);
+				if (null != jizhangOtherDayExisted) {// 有则更新
+					String oldshouyie = jizhangOtherDayExisted.getShouyie();
+					Double newShouyie = shoyieInAvg + Double.parseDouble(oldshouyie);
+					String oldtouzie = jizhangDayExisted.getXinzengtouzie();
+					Double newtouzie = Double.parseDouble(oldtouzie) + 0.0;
+					String oldtixiane = jizhangDayExisted.getTixiane();
+					Double newtixiane = Double.parseDouble(oldtixiane) + 0.0;
+					jizhangDayDao.UpdateJizhangDayInfo(userId, jizhangriqi, 
+							newtouzie.toString(), newShouyie.toString(), newtixiane.toString());
+					
+					optinfoDao.SaveAddingUserJizhangDayOpt(userId, jizhangriqi, 
+							"0", shoyieInAvg.toString(), "0", "0");
+				} else {// 无则添加
+					JizhangDay jizhangDayAdded = new JizhangDay();
+					jizhangDayAdded.setId(userId);
+					jizhangDayAdded.setJizhangriqi(jizhangriqi);
+					jizhangDayAdded.setShouyie(shoyieInAvg.toString());
+					jizhangDayAdded.setXinzengtouzie("0");
+					jizhangDayAdded.setTixiane("0");
+					jizhangDayAdded.setTouzitianshu("0");
+					jizhangDayDao.save(jizhangDayAdded);
+					
+					optinfoDao.SaveAddingUserJizhangDayOpt(userId, jizhangriqi, 
+							"0", shoyieInAvg.toString(), "0", "0");
+				}
+			}
+
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
 	public boolean bUserJizhangExist(String userId)
 	{
 		boolean bRet = false;
@@ -601,9 +696,14 @@ public class UserService extends BaseService{
 	public int AddUserJizhangSumInfo(String userId, String jizhangriqi, 
 			String xinzengtouzie, String shouyie, String tixiane)
 	{
-		//成功要汇总
+		// 判断有没有投资，没有投资则不能添加用户记账总记录
+		Double userZongtouzie = touziDao.queryUserSumTouzi(userId);
+		if (null == userZongtouzie || userZongtouzie <= 0) {
+			return 0;
+		}
+		
 		List<JizhangSum> userjizhangsum = jizhangSumDao.GetUserJizhangSumInfo(userId);
-		if(userjizhangsum.size() <= 0)
+		if(userjizhangsum.size() <= 0) // 没有则添加新汇总记录
 		{
 			//没有则插入新记录
 			JizhangSum jizhangsum = new JizhangSum();
@@ -619,13 +719,12 @@ public class UserService extends BaseService{
 			jizhangSumDao.save(jizhangsum);
 			return 0;
 		}
-		else
+		else // 有则更新记录
 		{
-			//有则更新记录
 			//收益额 == 收益额； 
 			//总投资 = 总投资 + 新增投资 + 收益额 - 提现额 ； 
 			//总收益 = 总收益 + 收益额；
-            Double userZongtouzie = touziDao.queryUserSumTouzi(userId);
+            //Double userZongtouzie = touziDao.queryUserSumTouzi(userId);
 			
 			Double userZongshouyie = shouyiDao.queryUserSumShouyi(userId);
 			
@@ -637,7 +736,7 @@ public class UserService extends BaseService{
 			
 			String zongshouyie = String.valueOf(userZongshouyie);
 			
-			jizhangSumDao.UpdateJizhangSumInfo(userId, zongtouzie, shouyie, zongshouyie);
+			jizhangSumDao.UpdateJizhangSumInfo(userId, zongtouzie, shouyie, zongshouyie, jizhangriqi);
 			
 			return 1;
 			
@@ -712,6 +811,62 @@ public class UserService extends BaseService{
 		}
 	}
 	
+	public void AddAvgShouyiRec(String id, String beginShouyiriqi,
+			String sumShouyie) {
+		// 判断有没有投资，没有投资则不能添加收益
+		Double userZongtouzie = touziDao.queryUserSumTouzi(id);
+		if (null == userZongtouzie || userZongtouzie <= 0) 
+		{
+			return;
+		}
+
+		try {
+			Date date = dfShouyi.parse(beginShouyiriqi);
+			Calendar c = Calendar.getInstance();
+			c.setTime(date);
+
+			Double shoyieIn = Double.parseDouble(sumShouyie);
+			if (sumShouyie != null && shoyieIn > 0) //有收益
+			{
+				Double shoyieInAvg = shoyieIn / 30;
+				for (int iDay = 0; iDay < 30; iDay++) {
+					if( 0 == iDay)
+					{
+						; //开始天不需要日期增加
+					}
+					else
+					{
+						c.add(Calendar.DAY_OF_YEAR, 1);
+					}
+					
+					String shouyiriqi = dfShouyi.format(c.getTime());
+					Shouyi shouyiExisted = shouyiDao.queryShouyiDayInfo(id, shouyiriqi);
+					if (null == shouyiExisted) { // 平均天没有收益记录，则新增
+						Shouyi newShouyi = new Shouyi();
+						newShouyi.setId(id);
+						newShouyi.setShouyiriqi(shouyiriqi);
+						newShouyi.setShouyie(shoyieInAvg.toString());
+						shouyiDao.save(newShouyi);
+					} else {
+						String oldShouyie = shouyiExisted.getShouyie();
+						Double newShouyie = shoyieInAvg
+								+ Double.parseDouble(oldShouyie);
+						shouyiDao.UpdateUserDayShouyi(id, shouyiriqi,
+								newShouyie.toString());
+					}
+				}
+
+			} else { //没有收益，则不需要平均分配
+				;
+			}
+
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+	
 	public void DeleteShouyiRec(String id, String shouyiriqi)
 	{
 		shouyiDao.DeleteUserDayShouyi(id, shouyiriqi);
@@ -765,7 +920,6 @@ public class UserService extends BaseService{
 	
 	public String GetbackrecInfo()
 	{
-//		List<Back> backlist = backDao.loadAll();
 		List<BackEx> backlist = backUtil.getBackList();
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("retCode", 500);
@@ -797,7 +951,7 @@ public class UserService extends BaseService{
 				int processComplete = process.waitFor();
 				if (processComplete == 0) {  
 //				    backDao.backdataInfo(filename2);
-					backUtil.backdataInfo(filename2);
+					backUtil.backdataInfo(savePath);
 					List<BackEx> backlist = backUtil.getBackList();
 //				    List<Back> backlist = backDao.loadAll();
 				    map.put("retCode", 500);
@@ -815,4 +969,46 @@ public class UserService extends BaseService{
 		JsonConfig sc = new JsonConfig();
 		return  JSONObject.fromObject(map, sc).toString();
 	}
+	
+	public void AddUserDayJizhangInfo(String userId, String jizhangriqi,
+			String xinzengtouzie, String tixiane, String shouyie,
+			String touzitianshu, Map<String, Object> map) {
+		Double touzieIn = Double.parseDouble(xinzengtouzie);
+		if (touzieIn != null && touzieIn > 0) {
+			AddTouziRec(userId, jizhangriqi, xinzengtouzie, touzitianshu);
+		} else {
+			;
+		}
+
+		// 平均30天收益
+		Double shoyieIn = Double.parseDouble(shouyie);
+		if (shouyie != null && shoyieIn > 0) {
+			// 添加用户的收益记录
+			AddAvgShouyiRec(userId, jizhangriqi, shouyie);
+		} else {
+			;// 为0，则不需要删除，因为之前不会被添加
+		}
+		
+		// 根据平均收益，添加用户的天记账记录
+		AddUserJizhangDayInfoByAvgShouyie(userId, jizhangriqi,
+				xinzengtouzie, shouyie, tixiane, touzitianshu);
+
+		Double tixianeIn = Double.parseDouble(tixiane);
+		if (tixianeIn != null && tixianeIn > 0) {
+			AddTixianRec(userId, jizhangriqi, tixiane);
+			;
+		} else {
+			;// 为0，则不需要删除，因为之前不会被添加
+		}
+
+		AddUserJizhangSumInfo(userId, jizhangriqi, xinzengtouzie, shouyie,
+				tixiane);
+
+		ModifyUserNianhualv(userId);
+
+		map.put("retCode", 500);
+		map.put("msg", "投资收益增加成功！");
+
+	}
+	
 }

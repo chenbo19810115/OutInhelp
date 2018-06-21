@@ -13,7 +13,7 @@ public class JizhangSumDao  extends BaseDao<JizhangSum> {
 	
 	protected final String GET_EXCLUDE_USER_JIZHNAG = "from JizhangSum where id !=?";
 	
-	protected final String UpdateJizhang = "update JizhangSum set zongtouzie=?, shouyie=?, zongshouyie=? where id =?";
+	protected final String UpdateJizhang = "update JizhangSum set zongtouzie=?, shouyie=?, zongshouyie=?, jizhangriqi=? where id =?";
 	
 	protected final String UpdateJizhang2 = "update JizhangSum set zongtouzie=?, zongshouyie=? where id =?";
 	
@@ -27,10 +27,10 @@ public class JizhangSumDao  extends BaseDao<JizhangSum> {
 	}
 	
 	public int UpdateJizhangSumInfo(String userId,
-			String zongtouzie, String shouyie, String zongshouyie)
+			String zongtouzie, String shouyie, String zongshouyie, String jizhangriqi)
 	{
 		return getHibernateTemplate().bulkUpdate(UpdateJizhang, zongtouzie, 
-				shouyie, zongshouyie, userId);
+				shouyie, zongshouyie, jizhangriqi, userId);
 	}
 	
 	public int UpdateJizhangSumInfo(String userId,

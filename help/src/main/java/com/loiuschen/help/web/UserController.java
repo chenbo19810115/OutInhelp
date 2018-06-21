@@ -321,7 +321,7 @@ public class UserController {
 				userService.DeleteTixianRec(userId, jizhangriqi);
 			}
 			
-			userService.ModifyUserJizhangSumInfo(userId, shouyie);
+			userService.ModifyUserJizhangSumInfo(userId, shouyie, jizhangriqi);
 			
 			userService.ModifyUserNianhualv(userId);
 			
@@ -408,46 +408,10 @@ public class UserController {
 		String shouyie = request.getParameter("shouyie");
 		String touzitianshu = request.getParameter("touzitianshu");
 		Map<String, Object> map = new HashMap<String, Object>();
-		if(true == userService.bCheckUserExist(userId)){
-			
-			userService.AddUserJizhangDayInfo(userId, jizhangriqi, 
-					xinzengtouzie, shouyie, tixiane, touzitianshu);
-			
-			Double touzieIn = Double.parseDouble(xinzengtouzie);
-			if(touzieIn != null && touzieIn > 0 )
-			{
-				userService.AddTouziRec(userId, jizhangriqi, xinzengtouzie, touzitianshu);
-			}else
-			{
-				userService.DeleteTouziRec(userId, jizhangriqi);
-			}
-			
-			Double shoyieIn = Double.parseDouble(shouyie);
-			if(shoyieIn != null && shoyieIn > 0 )
-			{
-				userService.AddShouyiRec(userId, jizhangriqi, shouyie);
-			}else
-			{
-				userService.DeleteShouyiRec(userId, jizhangriqi);
-			}
-			
-			Double tixianeIn = Double.parseDouble(tixiane);
-			if(tixianeIn != null && tixianeIn > 0 )
-			{
-				userService.AddTixianRec(userId, jizhangriqi, tixiane);;
-			}else
-			{
-				userService.DeleteTixianRec(userId, jizhangriqi);
-			}
-			
-			userService.AddUserJizhangSumInfo(userId, jizhangriqi, 
-					xinzengtouzie, shouyie, tixiane);
-			
-			userService.ModifyUserNianhualv(userId);
-			
-			map.put("retCode", 500);
-			map.put("msg", "投资收益增加成功！");
-			
+		
+		if(true == userService.bCheckUserExist(userId)){//用户是否存在
+			userService.AddUserDayJizhangInfo(userId, jizhangriqi, xinzengtouzie, tixiane,
+					shouyie, touzitianshu, map);
 			
 		}else{
 			map.put("retCode", 501);
@@ -459,6 +423,7 @@ public class UserController {
 		response.setContentType("text/html;charset=utf-8");
 		response.getWriter().write(msg);
 	}
+	
 	
 	@RequestMapping(value = "/DeleteUserSumJizhangAPI", method = RequestMethod.GET)
 	void DeleteUserSumJizhang(HttpServletRequest request, HttpServletResponse response) throws IOException
